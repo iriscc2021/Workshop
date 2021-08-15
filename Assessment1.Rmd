@@ -1,0 +1,22 @@
+---
+title: "assessment1.1"
+author: "MENG CHEN 4652515"
+date: "15/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# RMarkdown editing
+
+**_A Markdown editor is an intuitive and lightweight text-to-HTML conversion tool for web content writers. You can use it to format lists, headers, and for emphasis, as well as to incorporate links and images. The idea is to produce web content that is as easy to read as plain text._**
+
+[link](https://rmarkdown.rstudio.com/lesson-8.html)
+
+```{r}
+library(tidyverse)
+fastfood<-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-09-04/fastfood_calories.csv')
+```
+
