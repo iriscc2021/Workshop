@@ -1,0 +1,138 @@
+---
+title: "Assessment1Final"
+author: "MENG CHEN 4652515"
+date: "03/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#part1
+
+# RMarkdown editing
+
+**_A Markdown editor is an intuitive and lightweight text-to-HTML conversion tool for web content writers. You can use it to format lists, headers, and for emphasis, as well as to incorporate links and images. The idea is to produce web content that is as easy to read as plain text._**
+
+[link](https://rmarkdown.rstudio.com/lesson-8.html)
+
+```{r}
+library(tidyverse)
+fastfood<-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-09-04/fastfood_calories.csv')
+
+head(fastfood,10)
+
+library(knitr)
+knitr::kable(fastfood[1:10,1:5],"pipe")
+
+filter(fastfood, calories>1000)
+
+dont_eat_this <- filter(fastfood, total_fat>40,total_carb>80)
+head(dont_eat_this)
+
+filter(fastfood,restaurant=="Mcdonalds")
+
+```
+
+
+#part2
+```{r}
+library(skimr)
+fastfood%>%skim()
+
+count(fastfood,restaurant)
+
+fastfood%>%group_by(restaurant)%>%
+  summarise(mean_cal=mean(calories))
+
+fastfood%>%
+  group_by(restaurant)%>%
+  mutate(average_calories=mean(calories))%>%
+  ungroup()
+
+#I use a point graph because there are multiple items in a restaurant, the variable of total_fat is discrete.
+
+library(ggplot2)
+fastfood%>%
+  ggplot(aes(restaurant,total_fat))+
+  geom_point()
+
+fastfood%>%
+   group_by(restaurant)%>%
+  mutate(max_total_fat=max(total_fat))%>%
+  ungroup()
+
+fastfood%>%
+  filter(restaurant=="Mcdonalds")%>%
+  ggplot(aes(sugar,protein))+
+  geom_point()
+
+
+```
+
+
+#part3
+
+#18
+```{r}
+library(forcats)
+as.factor(fastfood$restaurant)
+```
+
+#19
+```{r}
+calories_type<-fastfood%>%
+  mutate(calories_type=cut_number(calories,n=3,labels=c("low", "med", "high")))%>%
+  arrange(calories_type)
+```
+
+#20
+```{r}
+calories_type%>%
+  ggplot(aes(calories_type))+
+  geom_bar()+
+  facet_wrap(~restaurant)+
+  coord_flip()+
+  theme_bw()+
+  labs(y="calories_type",title="Fastfood Data Visualisation")
+```
+
+#21
+```{r}
+trans_fat_percent<-fastfood%>%
+  mutate(trans_fat_percent=trans_fat/total_fat*100)
+
+```
+
+#22
+```{r}
+ggplot(fastfood,aes(trans_fat,total_fat))+
+  geom_point()+
+  facet_wrap(~restaurant)+
+  coord_flip()+
+  theme_bw()+
+  labs(x="trans_fat",y="total_fat",title="Fastfood Data Visualisation")
+
+```
+
+#23
+```{r}
+fastfood%>%
+  group_by(restaurant)%>%
+  summarise(average_total_fat=mean(total_fat))%>%
+  ungroup()
+```
+
+#24
+```{r}
+fastfood%>%
+  group_by(restaurant)%>%
+  mutate(average_total_fat=mean(total_fat))%>%
+  ungroup()%>%
+  ggplot(aes(restaurant,average_total_fat))+
+  geom_col(fill="blue")+
+  theme_bw()+
+  labs(x="restaurant",y="average_total_fat",title="Fastfood Data Visualisation")
+
+```
+
