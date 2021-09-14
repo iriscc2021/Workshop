@@ -1,0 +1,189 @@
+---
+title: "Practical assignment assessment2"
+author: "MENG CHEN 4652515"
+date: "03/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## *MENG CHEN* **S4652515**
+___
+# Assignment 2
+___
+My photo: ![](C:\Users\irisc\OneDrive\桌面\BCO7000\Victoria_University_logo.jpg)
+
+### part2 Part 2: Data Wrangling and visualization
+### 1. Display the first 10 rows of the dataset using `kable()` function (1 marks)
+```{r}
+library(tidyverse)
+library(knitr)
+data<-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv')
+
+head(data,10)%>%
+  kable()
+  
+```
+
+### 2. Use `fct_reorder` and `parse_number` functions to create a factor variable `family_income`
+```{r}
+
+data%>%
+  mutate(family_income=fct_reorder(family_income,parse_number(family_income)))
+```
+
+
+
+### 3.Generate the general statistics of the dataset using `summary()` and `skim()` function 
+```{r}
+library(skimr)
+skim(data)
+  
+summary(data)
+  
+```
+
+
+### 4. What is the number of people who celebrate?
+```{r}
+count(data,celebrate)%>%
+  kable()
+```
+## *We can see that the number is 980.*
+
+
+
+
+### 5. What are categories and stats for each main dish served and the method it is prepared?
+```{r}
+count(data,main_dish,main_prep)%>%
+  filter(main_prep !="None")%>%
+  kable()
+  
+```
+
+### 6. Create a data viz showing this in the most evident way. Provide your own legend and use themes.
+```{r}
+data%>%
+  filter(main_prep !="None")%>%
+  ggplot(aes(main_dish,fill=main_prep))+
+  geom_bar()+
+  coord_flip()+
+  theme_bw()+
+  labs(x="Main dish",title="Main Dish and the Way of Cooking")
+```
+
+
+
+### 7. How many use cranberry sauce? How many use gravy? 
+```{r}
+count(data,cranberry)%>%
+  kable()
+
+count(data,gravy)%>%
+  kable()
+
+```
+## *We can see that 803(502 Canned and 301 homemade) people use cranberry sauce and 892 people use gravy.*
+
+
+### 8.What is the distribution of those who celebrate across income ranges
+```{r}
+data%>%
+  count(celebrate,family_income)%>%
+  filter(celebrate=="Yes")%>%
+  filter(family_income !="None")%>%
+  filter(family_income !="Prefer not to answer")%>%
+  kable()
+```
+
+
+### 9 Present this information in the most evident way on the data viz.
+```{r}
+data%>%
+  count(celebrate,family_income)%>%
+  filter(celebrate=="Yes")%>%
+  filter(family_income !="None")%>%
+  filter(family_income !="Prefer not to answer")%>%
+  ggplot(aes(family_income,n))+
+  geom_col(fill="skyblue")+
+  coord_flip()+
+  theme_bw()+
+  labs(x="Family Income",y="Number of People",title="Celebrating People Across Income Ranges")
+  
+```
+
+
+
+### 10. What are the most common pies, sides, and desserts?
+```{r}
+pie<-data%>%
+  select(starts_with("pie"),-pie13)%>%
+  gather(type,value)%>%
+  group_by(value)%>%
+  count(type,value,sort=TRUE)%>%
+  na.omit(value)%>%
+  filter(value !="None")%>%
+  filter(value!="other(please specify)")
+
+side<-data%>%
+  select(starts_with("side"),-side15)%>%
+  gather(type,value)%>%
+  group_by(value)%>%
+  count(type,value,sort=TRUE)%>%
+  na.omit(value)%>%
+  filter(value !="None")%>%
+  filter(value!="other(please specify)")
+
+dessert<-data%>%
+  select(starts_with("dessert"),-dessert12)%>%
+  gather(type,value)%>%
+  group_by(value)%>%
+  count(type,value,sort=TRUE)%>%
+  na.omit(value)%>%
+  filter(value !="None")%>%
+  filter(value!="other(please specify)")
+
+most_common<-rbind(pie,side,dessert)
+kable(most_common)
+```
+## *We can see that the most common one is Pumpkin,	Mashed potatoes and Ice cream.*
+
+
+### 11. Present this information on a data viz
+```{r}
+most_common%>%
+  ggplot(aes(value,n))+
+  geom_col(fill="skyblue")+
+  coord_flip()+
+  theme_bw()+
+  labs(x="Food Type",y="Number",title="The Most Common Pies, Sides, and Desserts")
+```
+
+
+### 13. How do the servings differ by income?
+```{r}
+data%>%filter(celebrate=="Yes")%>%
+  count(family_income,main_dish)%>%
+  filter(family_income !="None")%>%
+  filter(family_income !="Prefer not to answer")%>%
+  arrange(main_dish)%>%
+  kable()
+```
+
+
+
+### 14. Present this information on a data viz
+```{r}
+data%>%filter(celebrate=="Yes")%>%
+  filter(family_income !="None")%>%
+  filter(family_income !="Prefer not to answer")%>%
+  ggplot(aes(family_income,fill=main_dish))+
+  geom_bar()+
+  coord_flip()+
+  theme_bw()+
+  labs(x="Family Income",y="Number",title="Servings by Income")
+  
+```
