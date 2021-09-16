@@ -1,0 +1,217 @@
+---
+title: "Assessment 3"
+author: "MENG CHEN 4652515"
+date: "11/09/2021"
+output: html_document
+---
+
+# BCO7000 Assessment 3
+## "MENG CHEN 4652515""Ke Ni 4660593"
+
+# ABOUT THE DATASET [Historical Phone Usage]
+### The dataset demonstrate the adoption of mobile phones by country.And explores how different contitent affect the subscription of mobile and landline. The GDP per capita of a country probably affects the adoption of mobile phones.
+
+## Load the dataset
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(knitr)
+library(tidymodels)
+library(ranger)
+mobile <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/mobile.csv')
+landline <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/landline.csv')
+```
+
+
+# QUESTIONS
+### We know the fixed mobile and telephone subscriptions, and GDP per capita and the continent.
+
+*Major Question: How can we predict and increase sales using the continent and GDP? *
+
+*Subquestions:*
+
+
+Q1. Which characteristics predict the usage of mobile and telephone?
+
+Q2. What is the relation between the GDP per capita and the subscription?
+
+Q3. Is the relation between the GDP per capita and subscription dependent on contient?
+
+# EXPLORATORY ANALYSIS
+## Q1. Which characteristics predict the usage of mobile and telephone?
+```{r}
+mobile <- mobile %>%
+  mutate_if(is.character, factor)
+
+landline <- landline %>%
+  mutate_if(is.character, factor)
+
+mobile%>%
+  count(continent)%>%
+  arrange()%>%
+  kable()
+
+landline%>%
+  count(continent)%>%
+  arrange()%>%
+  kable()
+```
+
+
+## Q2. What is the relation between the GDP per capita and the subscription?
+### To find this relation, let's plot the gdp_per_cap as X-axis and subscription as Y-axis. We then use the linear regression to see how they are related.
+
+### For mobiles
+```{r}
+
+mobile%>%
+  filter(mobile_subs!="None",gdp_per_cap!="None")%>%
+  ggplot(aes(gdp_per_cap,mobile_subs)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE)
+  
+  
+```
+
+### For landline
+```{r}
+landline%>%
+  ggplot(aes(gdp_per_cap,landline_subs)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE)
+
+
+```
+
+## *We can see that urchins that when GDP per capita is higher, the subscriptions is more as well.The slope of the line shows a positive relation between the GDP per capita and the subscriptions.*
+
+
+## Q3. Is the relation between the GDP per capita and subscription dependent on contient?
+### Now, let's see if the above identified positive relation is dependent on the different continent.
+```{r}
+mobile %>%
+  ggplot(aes(gdp_per_cap, mobile_subs,colour = continent)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_viridis_d(option = "plasma", end = .7)+
+  labs(x = "mobile_subs", y = "gdp_per_cap", colour = "continent", title = "Dependence of mobile subscription on continent")
+  
+  
+  
+  
+  landline %>%
+  ggplot(aes(gdp_per_cap,landline_subs,  colour = continent)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_viridis_d(option = "plasma", end = .7)+
+  labs(x = "landline_subs", y = "gdp_per_cap", colour = "continent", title = "Dependence of landline subscription on continent")
+
+```
+
+## *We can see that all the slopes shows a positive relation. However, these slopes look different. For mobile subscription, the subscription of Africa is higher than other continents when the GDP is same.For landline, the subscription of America and oceania is higher than other continents when the GDP is same.*
+
+# PREDICTIVE ANALYSIS
+
+### Step 1: Split the dataset into Training & Testing datasets.
+```{r}
+mobile_split <- initial_split(mobile)
+mobile_train <- training(mobile_split)
+mobile_test <- testing(mobile_split)
+
+landline_split <- initial_split(landline)
+landline_train <- training(landline_split)
+landline_test <- testing(landline_split)
+
+```
+
+
+### Step 2: Pre-process the data.
+### on this modelling, we will use 3 variables from the dataset.
+
+### *Since we are predicting the mobile and landline subscription of the urchins, subscription is our Output variable and the others are our Input variables or Predictors.*
+
+```{r}
+
+mobile_recipe <- recipe(mobile_subs ~ gdp_per_cap+continent , data = mobile_train) 
+
+summary(mobile_recipe)
+
+
+mobile_recipe <- mobile_recipe %>%
+  step_center(all_numeric(), -all_outcomes()) %>% 
+  step_scale(all_numeric(), -all_outcomes()) %>% 
+  step_corr(all_numeric())
+
+mobile_prep <- prep(mobile_recipe, training = mobile_train)
+
+mobile_bake <- bake(mobile_prep, mobile_train)
+
+mobile_bake
+
+
+
+landline_recipe <- recipe(landline_subs ~ gdp_per_cap+continent , data = landline_train) 
+
+summary(landline_recipe)
+
+
+landline_recipe <- landline_recipe %>%
+  step_center(all_numeric(), -all_outcomes()) %>% 
+  step_scale(all_numeric(), -all_outcomes()) %>% 
+  step_corr(all_numeric())
+
+landline_prep <- prep(landline_recipe, training = landline_train)
+
+landline_bake <- bake(landline_prep, landline_train)
+
+landline_bake
+```
+
+
+### Step 3: Build a model
+```{r}
+model_mobile <- linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm")
+
+model_mobile
+
+model_mobile_fitted <- model_mobile %>%
+  fit(mobile_subs ~ gdp_per_cap*continent, data = mobile_bake)
+
+summary(model_mobile_fitted)
+
+
+model_landline <- linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm")
+
+
+model_landline
+
+model_landline_fitted <- model_landline %>%
+  fit(landline_subs ~ gdp_per_cap*continent, data = landline_bake)
+
+summary(model_landline_fitted)
+
+```
+
+
+### Step 4: Create a workflow
+### We then create a workflow to save the recipe and the model together. This workflow can then be used in future with any new data.Thus if we know the continent and GDP, we can predict the usage of mobile and landline.
+```{r}
+workflow_mobile <- workflow() %>%
+  add_recipe(mobile_recipe) %>%
+  add_model(model_mobile)
+  
+workflow_mobile
+
+workflow_landline <- workflow() %>%
+  add_recipe(landline_recipe) %>%
+  add_model(model_landline)
+  
+workflow_landline
+```
+
